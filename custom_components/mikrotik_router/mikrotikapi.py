@@ -11,6 +11,7 @@ from .const import (
 )
 
 import librouteros
+from librouteros.login import plain, token
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +58,24 @@ class MikrotikAPI:
         # Default ports
         if not self._port:
             self._port = 8729 if self._use_ssl else 8728
+
+    # ---------------------------
+    #   login_method
+    # ---------------------------
+    def login_method(self):
+        """Return librouteros login callable from stored config value."""
+        if callable(self._login_method):
+            return self._login_method
+
+        login_method = str(self._login_method).strip().lower()
+        login_methods = {
+            "plain": plain,
+            "token": token,
+        }
+        if login_method not in login_methods:
+            raise ValueError(f"Unsupported login method: {self._login_method}")
+
+        return login_methods[login_method]
 
     # ---------------------------
     #   has_reconnected
@@ -117,7 +136,7 @@ class MikrotikAPI:
 
         kwargs = {
             "encoding": self._encoding,
-            "login_methods": self._login_method,
+            "login_method": self.login_method(),
             "port": self._port,
         }
 
